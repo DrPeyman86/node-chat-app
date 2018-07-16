@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+    </head>
+
+<body>
+    <p>Welcome to the chat app</p>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        var socket = io();//the io() method gets available when we add the socket.io.js above.
+        //the socket stores the initialize request to the server from the client and to keep that connection open
+        //this will keep the connection open and allow us to send data back forth between the client and server
+    
+        //create a  socket to send to client when we successfully connect to server
+        //exactly like the socket.io in the server side, expect the argument is different
+        socket.on('connect', () => {
+            console.log('connected to server');
+        })
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        })
+    </script>
+</body>
+
+</html>
