@@ -3,6 +3,8 @@ const http = require('http')//pre-built in function with node js
 const express = require('express');//set up http server
 const socketIO = require('socket.io');//makes it easy to set up server that supports web sockets and to create a front end that communicates with the server socket/backend
 
+const {generateMessage} = require('./utils/message');
+
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
 
