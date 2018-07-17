@@ -28,11 +28,44 @@ io.on('connection', (socket) => {
     //as soon as it reconnects, it hits the io.on() method, and that's when you see the New user Connected
     console.log('New User connected');
     //
+    //emit creates and event rather than listening
+    //the name of the emit event has to be exactly what it is in client side
+    //that the client is listening to
+    //most commonly you will be sending an object across the pipeline
+    socket.emit('newEmail', {
+        from: "peymanc123@gmail.com",
+        text: "hey whats up",
+        createdAt: "7/16/2018"
+    })
+    //socket.on is opposite to emit where .on is now listening to the client for a request called createEmail
+    socket.on('createEmail', (newEmail) => {
+        console.log('createEmail', newEmail);
+    })
 
+    //socket.emit emits the message to a single particular connection
+    socket.emit('newMessage', {
+        from: "peyman",
+        to: "john",
+        createdAt: "7/16/2018"
+    })
+
+    socket.on('createMessage', (message)=> {
+        console.log("createMessage", message);
+        //io.emit emits what you do to every single user that is connected.
+        //so if you want to send the same message to every open tab, use io.emit
+        io.emit('newMessage', {
+            from: message.from,
+            text: message.text,
+            createdAt: new Date().getTime()
+        })
+    })
+
+
+    //when the user disconnects, listen to that event and do something in callback
     socket.on('disconnect', ()=> {
         console.log('User was disconnected');
     })
-})
+})//io.on end
 
 app.use(express.static(publicPath));//set a middleware for the app to use for your client side files. the app will initiate the
 //client files everytime the server starts
