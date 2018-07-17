@@ -32,28 +32,52 @@ io.on('connection', (socket) => {
     //the name of the emit event has to be exactly what it is in client side
     //that the client is listening to
     //most commonly you will be sending an object across the pipeline
-    socket.emit('newEmail', {
-        from: "peymanc123@gmail.com",
-        text: "hey whats up",
-        createdAt: "7/16/2018"
-    })
+    // socket.emit('newEmail', {
+    //     from: "peymanc123@gmail.com",
+    //     text: "hey whats up",
+    //     createdAt: "7/16/2018"
+    // })
+
+
     //socket.on is opposite to emit where .on is now listening to the client for a request called createEmail
     socket.on('createEmail', (newEmail) => {
         console.log('createEmail', newEmail);
     })
 
     //socket.emit emits the message to a single particular connection
+    // socket.emit('newMessage', {
+    //     from: "peyman",
+    //     to: "john",
+    //     createdAt: "7/16/2018"
+    // })
+
+    //when a new user joins, create a welcome message to them
     socket.emit('newMessage', {
-        from: "peyman",
-        to: "john",
-        createdAt: "7/16/2018"
+        from: "Admin",
+        text: "Welcome Peyman",
+        createdAt: new Date().getTime()
+    })
+    //send a message to all users logged on that there is a new user 
+    socket.broadcast.emit('newMessage', {
+        from: "Admin",
+        text: "New User Peyman Joined",
+        createdAt: new Date().getTime()
     })
 
     socket.on('createMessage', (message)=> {
         console.log("createMessage", message);
         //io.emit emits what you do to every single user that is connected.
         //so if you want to send the same message to every open tab, use io.emit
-        io.emit('newMessage', {
+        // io.emit('newMessage', {
+        //     from: message.from,
+        //     text: message.text,
+        //     createdAt: new Date().getTime()
+        // })
+
+        //socket.broadcast.emit is same syntax as .emit() except broadcast
+        //will only send to every other user logged on other than the person
+        //who trigged this event in their client web page
+        socket.broadcast.emit('newMessage', {
             from: message.from,
             text: message.text,
             createdAt: new Date().getTime()
