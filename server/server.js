@@ -4,6 +4,7 @@ const express = require('express');//set up http server
 const socketIO = require('socket.io');//makes it easy to set up server that supports web sockets and to create a front end that communicates with the server socket/backend
 
 const {generateMessage} = require('./utils/message');
+const {generateLocationMessage} = require('./utils/message');
 
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
@@ -89,8 +90,12 @@ io.on('connection', (socket) => {
             text: message.text,
             createdAt: new Date().getTime()
         })
-        callback('This is from the callback');//call the callback() so that the client callback will be called once this is done in server
+        callback('This is from the server callback');//call the callback() so that the client callback will be called once this is done in server
         //callback({data: 'Data got back',when: new Date().getTime()})
+    })
+
+    socket.on('createLocationMessage',(coords)=> {
+        io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude))
     })
 
 

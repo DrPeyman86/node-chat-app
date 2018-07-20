@@ -39,6 +39,16 @@ socket.on('newMessage', function(message) {
 
 })
 
+socket.on('newLocationMessage', function(message) {
+    var li = $('<li></li>');
+    var a = $('<a target="_blank">My Current Location</a>')
+    li.text(`${message.from}: `);
+    a.attr('href', message.url)
+    li.append(a);
+
+    $('#messages').append(li);
+})
+
 // socket.emit('createMessage', {
 //     from: 'Peyman',
 //     text: 'Hi Peyman'
@@ -55,5 +65,23 @@ $('#message-form').on('submit', function (e) {
         text: $('[name=message]').val()
     }, function() {
         console.log('callback');
+    })
+})
+
+var locationButton = $('#send-location');
+locationButton.on('click', function() {
+    if (!navigator.geolocation) {//navigator.geolocation is a property that all browsers come with. if it doesn't exist, it will enter here
+        return alert('Geolocation not supported by browser');
+    }
+
+    //getCurrentPosition function of the navigator.geolocation method has 2 arguments. the success and error. First argument is success. second is error.
+    navigator.geolocation.getCurrentPosition(function (position) {
+        //console.log(position);
+        socket.emit('createLocationMessage', {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+        })
+    }, function() {
+        alert('Unable to fetch location');
     })
 })
