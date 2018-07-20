@@ -60,11 +60,14 @@ socket.on('newLocationMessage', function(message) {
 $('#message-form').on('submit', function (e) {
     e.preventDefault();//prevents the default of the event. so if submit button refreshes a page, the preventDefault prevents the page from refreshing. 
 
+    var messageTextbox = $('[name=message]')
+    
     socket.emit('createMessage', {
         from: 'User',
-        text: $('[name=message]').val()
+        text: messageTextbox.val()
     }, function() {
-        console.log('callback');
+        //console.log('callback');
+        messageTextbox.val('');
     })
 })
 
@@ -73,6 +76,7 @@ locationButton.on('click', function() {
     if (!navigator.geolocation) {//navigator.geolocation is a property that all browsers come with. if it doesn't exist, it will enter here
         return alert('Geolocation not supported by browser');
     }
+    locationButton.attr('disabled', 'disabled').text('Sending location...');
 
     //getCurrentPosition function of the navigator.geolocation method has 2 arguments. the success and error. First argument is success. second is error.
     navigator.geolocation.getCurrentPosition(function (position) {
@@ -81,7 +85,9 @@ locationButton.on('click', function() {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
         })
+        locationButton.removeAttr('disabled').text('Send Location');
     }, function() {
+        locationButton.removeAttr('disabled').text('Send Location');
         alert('Unable to fetch location');
     })
 })
