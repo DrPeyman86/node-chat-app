@@ -33,3 +33,11 @@ socket.on('newEmail', function(email) {
 socket.on('newMessage', function(message) {
     console.log('New Message', message);
 })
+
+socket.emit('createMessage', {
+    from: 'Peyman',
+    text: 'Hi Peyman'
+}, function(data){//the third argument in the emit() is the callback. So after the server has done something to the data we send, the callback gets called
+    //if your callback function from server had something in it, give it name above
+    console.log('Got it:', data);
+})

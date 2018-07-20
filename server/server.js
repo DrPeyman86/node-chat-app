@@ -54,19 +54,24 @@ io.on('connection', (socket) => {
     // })
 
     //when a new user joins, create a welcome message to them
-    socket.emit('newMessage', {
-        from: "Admin",
-        text: "Welcome Peyman",
-        createdAt: new Date().getTime()
-    })
-    //send a message to all users logged on that there is a new user 
-    socket.broadcast.emit('newMessage', {
-        from: "Admin",
-        text: "New User Peyman Joined",
-        createdAt: new Date().getTime()
-    })
+    // socket.emit('newMessage', {
+    //     from: "Admin",
+    //     text: "Welcome Peyman",
+    //     createdAt: new Date().getTime()
+    // })
+    //replaces lines above where we instead use a function to return our data
+    socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app Peyman'))
 
-    socket.on('createMessage', (message)=> {
+    //send a message to all users logged on that there is a new user 
+    // socket.broadcast.emit('newMessage', {
+    //     from: "Admin",
+    //     text: "New User Peyman Joined",
+    //     createdAt: new Date().getTime()
+    // })
+    //replaces lines above where we instead use a function to return our data
+    socket.broadcast.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app Peyman'));
+
+    socket.on('createMessage', (message, callback)=> {//if the client side has a callback function ready, then you need callback here and call it below
         console.log("createMessage", message);
         //io.emit emits what you do to every single user that is connected.
         //so if you want to send the same message to every open tab, use io.emit
@@ -79,11 +84,13 @@ io.on('connection', (socket) => {
         //socket.broadcast.emit is same syntax as .emit() except broadcast
         //will only send to every other user logged on other than the person
         //who trigged this event in their client web page
-        socket.broadcast.emit('newMessage', {
+        io.emit('newMessage', {
             from: message.from,
             text: message.text,
             createdAt: new Date().getTime()
         })
+        callback('This is from the callback');//call the callback() so that the client callback will be called once this is done in server
+        //callback({data: 'Data got back',when: new Date().getTime()})
     })
 
 
