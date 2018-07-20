@@ -69,7 +69,7 @@ io.on('connection', (socket) => {
     //     createdAt: new Date().getTime()
     // })
     //replaces lines above where we instead use a function to return our data
-    socket.broadcast.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app Peyman'));
+    socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
 
     socket.on('createMessage', (message, callback)=> {//if the client side has a callback function ready, then you need callback here and call it below
         console.log("createMessage", message);
