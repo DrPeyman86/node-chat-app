@@ -31,7 +31,8 @@ socket.on('newEmail', function(email) {
 })
 
 socket.on('newMessage', function(message) {
-    console.log('New Message', message);
+    //console.log('New Message', message);
+    var formattedTime = moment()
     var li = $('<li></li>');
     li.text(`${message.from}: ${message.text}`);
 
