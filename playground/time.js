@@ -20,7 +20,7 @@ console.log('time', dateMoment.format('hh:mm:SS A'))
 var newdate = new Date().getTime()
 console.log(newdate)
 var someTimestamp = moment().valueOf();//this is same as new Date().getTime() but using moment js library
-console.log(someTimestamp);
+console.log('valueof',someTimestamp);
 
 var createdAt = 12345
 var dateCreatedFrom = moment(createdAt)//when a value is passeed through in moment, it will use that as the time it users, otherwise it would use current time

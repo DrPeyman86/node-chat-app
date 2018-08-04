@@ -2,6 +2,23 @@ var socket = io();//the io() method gets available when we add the socket.io.js 
 //the socket stores the initialize request to the server from the client and to keep that connection open
 //this will keep the connection open and allow us to send data back forth between the client and server
 
+function scrollToBottom() {
+    //selectors
+    var messages = $('#messages');
+    var newMessage = messages.children('li:last-child');
+    //heights
+    var clientHeight = messages.prop('clientHeight');
+    var scrollTop = messages.prop('scrollTop');
+    var scrollHeight = messages.prop('scrollHeight');
+    var newMessageHeight = newMessage.innerHeight();
+    var lastMessageHeight = newMessage.prev().innerHeight();
+
+    if (clientHeight + scrollTop + newMessageHeight + lastMessageHeight >= scrollHeight) {
+        //console.log('should scroll');
+        messages.scrollTop(scrollHeight);
+    }
+}
+
 //create a  socket to send to client when we successfully connect to server
 //exactly like the socket.io in the server side, expect the argument is different
 socket.on('connect', function()  {
@@ -32,22 +49,46 @@ socket.on('newEmail', function(email) {
 
 socket.on('newMessage', function(message) {
     //console.log('New Message', message);
-    var formattedTime = moment()
-    var li = $('<li></li>');
-    li.text(`${message.from}: ${message.text}`);
+    /*set the template you want to render*/
+    var formattedTime = moment(message.createdAt).format('h:mm a');
+    var template = $('#message-template').html();
+    //pass in the object using render and an object as its second argument.
+    var html = Mustache.render(template, {
+        text: message.text,
+        from: message.from,
+        createdAt: formattedTime
+    });
 
-    $('#messages').append(li);
+    $('#messages').append(html);
+    scrollToBottom()
+    
+    // var li = $('<li></li>');
+    // li.text(`${message.from} ${formattedTime}: ${message.text}`);
+
+    // $('#messages').append(li);
 
 })
 
 socket.on('newLocationMessage', function(message) {
-    var li = $('<li></li>');
-    var a = $('<a target="_blank">My Current Location</a>')
-    li.text(`${message.from}: `);
-    a.attr('href', message.url)
-    li.append(a);
+    // var li = $('<li></li>');
+    // var a = $('<a target="_blank">My Current Location</a>')
+    var formattedTime = moment(message.createdAt).format('h:mm a');
+    
+    // li.text(`${message.from} ${formattedTime}: `);
+    // a.attr('href', message.url)
+    // li.append(a);
 
-    $('#messages').append(li);
+    // $('#messages').append(li);
+
+    var template =$('#location-message-template').html()
+    var html = Mustache.render(template, {
+        url: message.url,
+        createdAt: formattedTime,
+        from: message.from
+    })
+
+    $('#messages').append(html);
+    scrollToBottom()
 })
 
 // socket.emit('createMessage', {
