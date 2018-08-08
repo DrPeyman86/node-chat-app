@@ -114,7 +114,7 @@ io.on('connection', (socket) => {
     
     
     socket.on('createMessage', (message, callback)=> {//if the client side has a callback function ready, then you need callback here and call it below
-        console.log("createMessage", message);
+        //console.log("createMessage", message);
         //io.emit emits what you do to every single user that is connected.
         //so if you want to send the same message to every open tab, use io.emit
         // io.emit('newMessage', {
@@ -122,21 +122,35 @@ io.on('connection', (socket) => {
         //     text: message.text,
         //     createdAt: new Date().getTime()
         // })
-
+        var user = users.getUser(socket.id);
         //socket.broadcast.emit is same syntax as .emit() except broadcast
         //will only send to every other user logged on other than the person
         //who trigged this event in their client web page
-        io.emit('newMessage', {
-            from: message.from,
-            text: message.text,
-            createdAt: new Date().getTime()
-        })
+        
+        //want to verify user does exist and make sure text is real string and not just blank spaces
+        if(user && isRealString(message.text)) {
+
+            //only emit .to() users that are in the same room as the user that is sending
+            io.to(user.room).emit('newMessage', {
+                from: user.name,
+                text: message.text,
+                createdAt: new Date().getTime()
+            })
+
+        }
+        
+        
         callback('This is from the server callback');//call the callback() so that the client callback will be called once this is done in server
         //callback({data: 'Data got back',when: new Date().getTime()})
     })
 
     socket.on('createLocationMessage',(coords)=> {
-        io.emit('newLocationMessage', generateLocationMessage('Admins', coords.latitude, coords.longitude))
+        var user = users.getUser(socket.id);//get the user id that is making the request
+        
+        if (user) {
+            //use .to() to only send to room that the user that is logged into.
+            io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude))
+        }
     })
 
 

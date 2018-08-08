@@ -132,7 +132,7 @@ $('#message-form').on('submit', function (e) {
     var messageTextbox = $('[name=message]')
     
     socket.emit('createMessage', {
-        from: 'User',
+        //from: 'User',//removed this so that we will send the users name from the server to the client
         text: messageTextbox.val()
     }, function() {
         //console.log('callback');
