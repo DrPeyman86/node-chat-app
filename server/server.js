@@ -3,8 +3,11 @@ const http = require('http')//pre-built in function with node js
 const express = require('express');//set up http server
 const socketIO = require('socket.io');//makes it easy to set up server that supports web sockets and to create a front end that communicates with the server socket/backend
 
+
 const {generateMessage} = require('./utils/message');
 const {generateLocationMessage} = require('./utils/message');
+const {isRealString} = require('./utils/validation');
+const {Users} = require('./utils/users');
 
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
@@ -17,6 +20,11 @@ var app = express()
 var server = http.createServer(app);
 var io = socketIO(server);//configure the server to use socketIO. pass in the server we want to use.  
 //this returns the web socket server that we can emit or listening to events in client side
+var users = new Users();//instantiate the Users class
+
+app.use(express.static(publicPath));//set a middleware for the app to use for your client side files. the app will initiate the
+//client files everytime the server starts
+
 
 //console.log(__dirname + '/../public')
 //console.log(path.join(__dirname,'../public'));
@@ -47,31 +55,64 @@ io.on('connection', (socket) => {
         console.log('createEmail', newEmail);
     })
 
-    //socket.emit emits the message to a single particular connection
-    // socket.emit('newMessage', {
-    //     from: "peyman",
-    //     to: "john",
-    //     createdAt: "7/16/2018"
-    // })
+    
+    socket.on('join', (params, callback) => {
+        if (!isRealString(params.name) || !isRealString(params.room)) {
+            return callback('Name and room name are required');//use return so that none of the code below this fires if there is validation error
+        }
 
-    //when a new user joins, create a welcome message to them
-    // socket.emit('newMessage', {
-    //     from: "Admin",
-    //     text: "Welcome Peyman",
-    //     createdAt: new Date().getTime()
-    // })
-    //replaces lines above where we instead use a function to return our data
-    socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app Peyman'))
+        //only want to emit messages that are only in the same room as you
+        socket.join(params.room)//special place to talk to whoever is in the same exact room
+        //socket.leave('The name of the room')//will kick you out of the room you are in
+        users.removeUser(socket.id)//remove the socket.id that belongs to a particular user so that they are not in more than one room at a time
+        users.addUser(socket.id, params.name, params.room);//add the user to the name using the Users class
+        
+        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
+        
+        //io.emit - will emit to everyone 
+        //io.to('The office fans').emit will send an emit event to whoever that is in that room
+        //socket.broadcast.emit will send message to everyone except for the current person sending message
+        //socket.broadcast.to('The office fans').emit - will send emit to all who is in the office fans room except current user
+        //socket.emit - will send only to a specific user
 
-    //send a message to all users logged on that there is a new user 
-    // socket.broadcast.emit('newMessage', {
-    //     from: "Admin",
-    //     text: "New User Peyman Joined",
-    //     createdAt: new Date().getTime()
-    // })
-    //replaces lines above where we instead use a function to return our data
-    socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
+        
+        //socket.emit emits the message to a single particular connection
+        // socket.emit('newMessage', {
+        //     from: "peyman",
+        //     to: "john",
+        //     createdAt: "7/16/2018"
+        // })
 
+        //when a new user joins, create a welcome message to them
+        // socket.emit('newMessage', {
+        //     from: "Admin",
+        //     text: "Welcome Peyman",
+        //     createdAt: new Date().getTime()
+        // })
+        //replaces lines above where we instead use a function to return our data
+        //moved the following socket.emit and socket.broadcast.emit inside the .join event listener 
+        //because we only want to emit these messages once the user has been veirifed to join a particular chat group
+
+        socket.emit('newMessage', generateMessage('Admin', `Welcome to the chat app ${params.name}`))
+
+        //send a message to all users logged on that there is a new user 
+        // socket.broadcast.emit('newMessage', {
+        //     from: "Admin",
+        //     text: "New User Peyman Joined",
+        //     createdAt: new Date().getTime()
+        // })
+        //replaces lines above where we instead use a function to return our data
+        //instead of socket.broadcast.emit() we add a .to() param to only emit a broadcast to those that are
+        //in that group the user justed joined into
+        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
+
+        
+        
+        
+        callback();//send back to callback with no errors
+    })
+    
+    
     socket.on('createMessage', (message, callback)=> {//if the client side has a callback function ready, then you need callback here and call it below
         console.log("createMessage", message);
         //io.emit emits what you do to every single user that is connected.
@@ -102,11 +143,16 @@ io.on('connection', (socket) => {
     //when the user disconnects, listen to that event and do something in callback
     socket.on('disconnect', ()=> {
         console.log('User was disconnected');
+        var user = users.removeUser(socket.id);//store potential removed users, this will return removed users
+
+        //if a user was removed and emit the message to every person in the chat room
+        if(user) {
+            io.to(user.room).emit('updateUserList', users.getUserList(user.room))
+            io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left chat room` ))
+        }
     })
 })//io.on end
 
-app.use(express.static(publicPath));//set a middleware for the app to use for your client side files. the app will initiate the
-//client files everytime the server starts
 
 //the app.listen literally calls http.createServer method
 //app.listen(port, () => {

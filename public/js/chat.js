@@ -22,8 +22,23 @@ function scrollToBottom() {
 //create a  socket to send to client when we successfully connect to server
 //exactly like the socket.io in the server side, expect the argument is different
 socket.on('connect', function()  {
-    console.log('connected to server');
+    var params = $.deparam(window.location.search);
 
+    //create a join event listener to the server.js server so that when new 
+    //user logs into a room, this will emit an event called join. which the 
+    //server will be listening for. the callback is to kick the user back out
+    //if the user did not provide a name or room number
+    socket.emit('join', params, function(err) {
+        if (err) {
+            alert(err);
+            window.location.href = '/'//this will send the user back up one page
+        } else {
+            console.log('no error');
+        }
+    })
+    
+    console.log('connected to server');
+    
     // socket.emit('createEmail', {
     //     to: "sepide.c@gmail.com",
     //     text: "hey this is peyman",
@@ -40,6 +55,18 @@ socket.on('connect', function()  {
 socket.on('disconnect', function() {
     console.log('Disconnected from server');
 })
+
+socket.on('updateUserList', function(users) {
+    //console.log('users list', users);
+    var ol = $('<ol></ol>');
+
+    users.forEach(function(user) {
+        ol.append($('<li></li>').text(user));
+    })
+
+    $('#users').html(ol);//wipe the list and create new list
+})
+
 //custom function. Custom function are anything that is not native to the socket.on argument list
 //everytime the client hears something a newEmail event coming across the pipeline enter here
 //the email is the object that is being returned from the socket.emit() in server side
