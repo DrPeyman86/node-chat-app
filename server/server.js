@@ -12,6 +12,14 @@ const {Users} = require('./utils/users');
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
 
+//things to do to expand the app
+//1.make the room name ignore case so that lowercase and uppercase having same room will still be in same room
+//2.make the user names unique so that two people can't have the same name
+//3.have a dropdown in the main menu join a chat room page so that you can join an active room - that's hardest of the 2 above
+
+
+
+
 var app = express()
 //var server = http.createServer((req,res) => {
 
