@@ -52,6 +52,10 @@ socket.on('connect', function()  {
     // })
 })
 
+socket.on('checkRooms', function(rooms){
+    console.dir(rooms)
+})
+
 socket.on('disconnect', function() {
     console.log('Disconnected from server');
 })

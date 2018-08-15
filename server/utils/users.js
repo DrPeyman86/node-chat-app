@@ -30,9 +30,29 @@ class Users {
     }
     //need 3 pieces of info to add user to correct room
     addUser(id, name, room) {
+        var room = room.toUpperCase();
         var user = {id, name, room};//ES6 format - create an object for each user being initialized
         this.users.push(user);//push to the array defined in constructor
         return user;//return the user
+    }
+
+    // returnUniqueRooms() {
+    //     //console.dir(this.users);
+    //     //let unique = [...new Set(this.users.map(item => item.room))];
+    //     return this.users;
+
+    //     // var roomsArray = users.map((user) => {
+    //     //     return user.room;//we only want to return the names of people that are in the room
+    //     // }) 
+    //     // return roomsArray
+    // }
+
+    checkUniqueName(name) {
+        //var userToCheck = this.getUser(id);
+        //if(userToCheck) {
+        var userNameCheck = this.users = this.users.filter((user)=> user.name === name)
+        //}
+        return userNameCheck[0];//return the user even if it was undefined. return only 1 because we only need one to know that name is duplicated
     }
 
     removeUser(id) {

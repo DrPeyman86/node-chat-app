@@ -8,6 +8,7 @@ const {generateMessage} = require('./utils/message');
 const {generateLocationMessage} = require('./utils/message');
 const {isRealString} = require('./utils/validation');
 const {Users} = require('./utils/users');
+const {Rooms} = require('./utils/rooms');
 
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ var server = http.createServer(app);
 var io = socketIO(server);//configure the server to use socketIO. pass in the server we want to use.  
 //this returns the web socket server that we can emit or listening to events in client side
 var users = new Users();//instantiate the Users class
+var rooms = new Rooms();
 
 app.use(express.static(publicPath));//set a middleware for the app to use for your client side files. the app will initiate the
 //client files everytime the server starts
@@ -56,6 +58,9 @@ io.on('connection', (socket) => {
     //     text: "hey whats up",
     //     createdAt: "7/16/2018"
     // })
+    socket.emit('loadRooms', rooms.loadRooms());
+
+    //console.log('usersroom:',users.returnUniqueRooms());
 
 
     //socket.on is opposite to emit where .on is now listening to the client for a request called createEmail
@@ -65,59 +70,93 @@ io.on('connection', (socket) => {
 
     
     socket.on('join', (params, callback) => {
-        if (!isRealString(params.name) || !isRealString(params.room)) {
+        var room_input = params.room.toUpperCase()
+        var room_select = params.room_select.toUpperCase();
+
+        var room = room_input || room_select;
+        console.log('room joined:',room);
+        //console.log('id:',socket.id);
+        if (!isRealString(params.name) || !isRealString(room)) {
             return callback('Name and room name are required');//use return so that none of the code below this fires if there is validation error
         }
 
-        //only want to emit messages that are only in the same room as you
-        socket.join(params.room)//special place to talk to whoever is in the same exact room
-        //socket.leave('The name of the room')//will kick you out of the room you are in
-        users.removeUser(socket.id)//remove the socket.id that belongs to a particular user so that they are not in more than one room at a time
-        users.addUser(socket.id, params.name, params.room);//add the user to the name using the Users class
+        if(isRealString(room_select) && isRealString(room_input)) {
+			return callback('Either select a room or create one');
+		}
+
+        let roomCheck = () => {
+            if(!rooms.loadRooms().includes(room)) {
+                rooms.addRooms(room);
+            }
+            console.log('rooms:', rooms.loadRooms());
+        }
+    
+
+        let joinRooms = () => {
+
+            //only want to emit messages that are only in the same room as you
+            socket.join(room)//special place to talk to whoever is in the same exact room
+            //socket.leave('The name of the room')//will kick you out of the room you are in
+            users.removeUser(socket.id)//remove the socket.id that belongs to a particular user so that they are not in more than one room at a time
+            users.addUser(socket.id, params.name, room);//add the user to the name using the Users class
+            
+            roomCheck();
+            
+            io.to(room).emit('updateUserList', users.getUserList(room));
+            
+            //io.emit - will emit to everyone 
+            //io.to('The office fans').emit will send an emit event to whoever that is in that room
+            //socket.broadcast.emit will send message to everyone except for the current person sending message
+            //socket.broadcast.to('The office fans').emit - will send emit to all who is in the office fans room except current user
+            //socket.emit - will send only to a specific user
         
-        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
-        
-        //io.emit - will emit to everyone 
-        //io.to('The office fans').emit will send an emit event to whoever that is in that room
-        //socket.broadcast.emit will send message to everyone except for the current person sending message
-        //socket.broadcast.to('The office fans').emit - will send emit to all who is in the office fans room except current user
-        //socket.emit - will send only to a specific user
+            //socket.emit emits the message to a single particular connection
+            // socket.emit('newMessage', {
+            //     from: "peyman",
+            //     to: "john",
+            //     createdAt: "7/16/2018"
+            // })
+
+            //when a new user joins, create a welcome message to them
+            // socket.emit('newMessage', {
+            //     from: "Admin",
+            //     text: "Welcome Peyman",
+            //     createdAt: new Date().getTime()
+            // })
+            //replaces lines above where we instead use a function to return our data
+            //moved the following socket.emit and socket.broadcast.emit inside the .join event listener 
+            //because we only want to emit these messages once the user has been veirifed to join a particular chat group
+
+            socket.emit('newMessage', generateMessage('Admin', `Welcome to the chat app ${params.name}`))
+
+            //send a message to all users logged on that there is a new user 
+            // socket.broadcast.emit('newMessage', {
+            //     from: "Admin",
+            //     text: "New User Peyman Joined",
+            //     createdAt: new Date().getTime()
+            // })
+            //replaces lines above where we instead use a function to return our data
+            //instead of socket.broadcast.emit() we add a .to() param to only emit a broadcast to those that are
+            //in that group the user justed joined into
+            socket.broadcast.to(room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
 
         
-        //socket.emit emits the message to a single particular connection
-        // socket.emit('newMessage', {
-        //     from: "peyman",
-        //     to: "john",
-        //     createdAt: "7/16/2018"
-        // })
-
-        //when a new user joins, create a welcome message to them
-        // socket.emit('newMessage', {
-        //     from: "Admin",
-        //     text: "Welcome Peyman",
-        //     createdAt: new Date().getTime()
-        // })
-        //replaces lines above where we instead use a function to return our data
-        //moved the following socket.emit and socket.broadcast.emit inside the .join event listener 
-        //because we only want to emit these messages once the user has been veirifed to join a particular chat group
-
-        socket.emit('newMessage', generateMessage('Admin', `Welcome to the chat app ${params.name}`))
-
-        //send a message to all users logged on that there is a new user 
-        // socket.broadcast.emit('newMessage', {
-        //     from: "Admin",
-        //     text: "New User Peyman Joined",
-        //     createdAt: new Date().getTime()
-        // })
-        //replaces lines above where we instead use a function to return our data
-        //instead of socket.broadcast.emit() we add a .to() param to only emit a broadcast to those that are
-        //in that group the user justed joined into
-        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
+            
+        }
 
         
-        
-        
+
+        //if(users.checkUniqueName(params.name)) {
+        if(users.getUserList(room).includes(params.name)) {
+            roomCheck();
+            return callback('Someone else has already the same name as you, select a different name');
+        } else {
+            joinRooms();
+        }
+
         callback();//send back to callback with no errors
+ 
+        
     })
     
     
